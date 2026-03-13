@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package wallet;
+option go_package = "./proto";
+
+// 钱包服务定义
+service WalletService {
+  // 创建钱包
+  rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse);
+  
+  // 获取钱包
+  rpc GetWallet(GetWalletRequest) returns (GetWalletResponse);
+  
+  // 转账
+  rpc Transfer(TransferRequest) returns (TransferResponse);
+}
+
+// 创建钱包请求
+message CreateWalletRequest {}
+
+// 钱包信息
+message Wallet {
+  string id = 1;
+  int64 balance = 2;
+  int64 created_at = 3;  // Unix timestamp
+  int64 updated_at = 4;  // Unix timestamp
+}
+
+// 创建钱包响应
+message CreateWalletResponse {
+  bool success = 1;
+  Wallet wallet = 2;
+  string error_message = 3;
+}
+
+// 获取钱包请求
+message GetWalletRequest {
+  string wallet_id = 1;
+}
+
+// 获取钱包响应
+message GetWalletResponse {
+  bool success = 1;
+  Wallet wallet = 2;
+  string error_message = 3;
+}
+
+// 转账请求
+message TransferRequest {
+  string from_wallet_id = 1;
+  string to_wallet_id = 2;
+  int64 amount = 3;
+}
+
+// 转账响应
+message TransferResponse {
+  bool success = 1;
+  string message = 2;
+  string from_wallet_id = 3;
+  string to_wallet_id = 4;
+  int64 from_balance = 5;
+  int64 to_balance = 6;
+  int64 transferred_at = 7;  // Unix timestamp
+}

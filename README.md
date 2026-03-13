@@ -58,22 +58,41 @@ go mod download
 
 3. 运行服务：
 
+**运行REST API服务：**
 ```bash
 go run cmd/server/main.go
 ```
 
-默认情况下，服务将在 `http://localhost:8080` 上启动。
+**运行gRPC服务：**
+```bash
+go run cmd/grpc_server/main.go
+```
+
+**运行统一服务（同时提供REST和gRPC）：**
+```bash
+go run cmd/unified_server/main.go
+```
+
+默认情况下，REST API服务将在 `http://localhost:8080` 上启动，gRPC服务在 `localhost:9090` 上启动。
 
 ### 构建二进制文件
 
 ```bash
-go build -o bin/wallet-service cmd/server/main.go
-./bin/wallet-service
+# 构建REST API服务
+go build -o bin/rest-server cmd/server/main.go
+
+# 构建gRPC服务
+go build -o bin/grpc-server cmd/grpc_server/main.go
+
+# 构建统一服务
+go build -o bin/unified-server cmd/unified_server/main.go
 ```
 
 ## API 接口
 
-### 创建钱包
+### REST API
+
+#### 创建钱包
 
 ```
 POST /wallets
@@ -101,7 +120,7 @@ curl -X POST http://localhost:8080/wallets
 }
 ```
 
-### 获取钱包信息
+#### 获取钱包信息
 
 ```
 GET /wallets/{wallet_id}
@@ -129,7 +148,7 @@ curl http://localhost:8080/wallets/{1351dc5c-38c7-4c9d-addc-f69687eeb032}
 }
 ```
 
-### 转账
+#### 转账
 
 ```
 POST /wallets/transfer
@@ -208,6 +227,65 @@ go test -v ./...
 ```bash
 go test -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out -o coverage.html
+```
+
+### gRPC 接口测试
+
+项目提供了 gRPC 接口测试脚本，使用 `grpcurl` 工具进行测试。
+
+#### 前置要求
+
+安装 grpcurl：
+
+```bash
+go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+```
+
+#### 运行测试脚本
+
+1. 首先启动服务：
+
+```bash
+go run cmd/server/main.go
+```
+
+2. 在另一个终端运行测试脚本：
+
+```bash
+./scripts/test_grpc.sh
+```
+
+#### 自定义配置
+
+可以通过环境变量配置测试目标：
+
+```bash
+GRPC_HOST=localhost GRPC_PORT=50051 ./scripts/test_grpc.sh
+```
+
+#### 手动测试 gRPC 接口
+
+使用 grpcurl 手动测试各个接口：
+
+```bash
+# 列出可用服务
+grpcurl -plaintext localhost:50051 list
+
+# 查看服务描述
+grpcurl -plaintext localhost:50051 describe wallet.WalletService
+
+# 创建钱包
+grpcurl -plaintext -d '{}' localhost:50051 wallet.WalletService/CreateWallet
+
+# 获取钱包信息
+grpcurl -plaintext -d '{"wallet_id": "your-wallet-id"}' localhost:50051 wallet.WalletService/GetWallet
+
+# 转账
+grpcurl -plaintext -d '{
+  "from_wallet_id": "wallet-1-id",
+  "to_wallet_id": "wallet-2-id",
+  "amount": 100
+}' localhost:50051 wallet.WalletService/Transfer
 ```
 
 ## 开发指南
