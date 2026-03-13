@@ -57,7 +57,13 @@ func (s *walletService) Deposit(id string, amount int64) (*model.Wallet, error) 
 		return nil, errors.ErrInsufficientBalance
 	}
 
-	return wallet, nil
+	// 获取更新后的钱包信息
+	updatedWallet, exists := s.repo.GetByID(id)
+	if !exists {
+		return nil, errors.ErrWalletNotFound
+	}
+
+	return updatedWallet, nil
 }
 
 // Transfer transfers funds from one wallet to another

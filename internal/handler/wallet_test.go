@@ -20,6 +20,7 @@ type MockWalletService struct {
 	CreateWalletFunc func() *model.Wallet
 	GetWalletFunc    func(id string) (*model.Wallet, error)
 	TransferFunc     func(req *model.TransferRequest) (*model.TransferResponse, error)
+	DepositFunc      func(id string, amount int64) (*model.Wallet, error)
 }
 
 func (m *MockWalletService) GetWallet(id string) (*model.Wallet, error) {
@@ -49,6 +50,17 @@ func (m *MockWalletService) Transfer(req *model.TransferRequest) (*model.Transfe
 	return &model.TransferResponse{
 		Success: true,
 		Message: "transfer successful",
+	}, nil
+}
+
+func (m *MockWalletService) Deposit(id string, amount int64) (*model.Wallet, error) {
+	if m.DepositFunc != nil {
+		return m.DepositFunc(id, amount)
+	}
+	// 默认返回存款成功
+	return &model.Wallet{
+		ID:      id,
+		Balance: amount, // 简单起见，假设初始余额为0
 	}, nil
 }
 
