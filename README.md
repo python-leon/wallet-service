@@ -88,6 +88,111 @@ go build -o bin/grpc-server cmd/grpc_server/main.go
 go build -o bin/unified-server cmd/unified_server/main.go
 ```
 
+## Docker 支持
+
+### 环境要求
+
+- Docker 20.10+
+- Docker Compose 1.29+（可选）
+
+### 使用 Docker Compose（推荐）
+
+```bash
+# 构建并启动服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 重新构建镜像
+docker-compose up -d --build
+```
+
+服务启动后：
+- REST API: http://localhost:8080
+- gRPC: localhost:50051
+
+### 使用 Docker 直接构建
+
+```bash
+# 构建镜像
+docker build -t wallet-service:latest .
+
+# 运行容器
+docker run -d \
+  --name wallet-service \
+  -p 8080:8080 \
+  -p 50051:50051 \
+  -e HTTP_PORT=8080 \
+  -e GRPC_PORT=50051 \
+  wallet-service:latest
+
+# 查看日志
+docker logs -f wallet-service
+
+# 停止容器
+docker stop wallet-service
+docker rm wallet-service
+```
+
+### 环境变量
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| HTTP_PORT | 8080 | REST API 端口 |
+| GRPC_PORT | 50051 | gRPC 服务端口 |
+| DEBUG | false | 调试模式 |
+
+### 镜像特性
+
+- **多阶段构建**：使用 `golang:1.24-alpine` 构建，`alpine:3.19` 运行，镜像体积小
+- **安全性**：以非 root 用户运行
+- **健康检查**：内置 HTTP 健康检查端点 `/health`
+- **时区支持**：包含 tzdata，支持时区配置
+
+### Docker 测试环境
+
+启动包含 grpcurl 测试工具的环境：
+
+```bash
+# 启动服务（包含测试工具）
+docker-compose --profile testing up -d
+
+# 使用 grpcurl 测试
+docker exec grpcurl-client grpcurl -plaintext wallet-service:50051 list
+```
+
+### 常见问题
+
+**镜像拉取失败（国内网络）**
+
+Dockerfile 已配置 Go 代理 `GOPROXY=https://goproxy.cn,direct`。如需配置 Docker 镜像加速，编辑 `/etc/docker/daemon.json`：
+
+```json
+{
+  "registry-mirrors": [
+    "https://docker.1ms.run"
+  ]
+}
+```
+
+然后重启 Docker：`sudo systemctl restart docker`
+
+**端口被占用**
+
+修改端口映射：
+```bash
+docker run -d -p 8081:8080 -p 50052:50051 wallet-service:latest
+```
+
+或通过环境变量：
+```bash
+docker run -d -p 8081:8081 -p 50052:50052 -e HTTP_PORT=8081 -e GRPC_PORT=50052 wallet-service:latest
+```
+
 ## API 接口
 
 ### REST API

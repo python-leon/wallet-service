@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  wallet-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wallet-service
+    ports:
+      - "8080:8080"   # REST API
+      - "50051:50051" # gRPC
+    environment:
+      - HTTP_PORT=8080
+      - GRPC_PORT=50051
+      - DEBUG=false
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  # Optional: grpcurl container for testing
+  grpcurl:
+    image: fullstorydev/grpcurl:latest
+    container_name: grpcurl-client
+    depends_on:
+      - wallet-service
+    entrypoint: ["tail", "-f", "/dev/null"]  # Keep container running
+    profiles:
+      - testing
