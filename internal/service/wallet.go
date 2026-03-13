@@ -1,6 +1,8 @@
 package service
 
 import (
+	"time"
+
 	"github.com/python-leon/wallet-service/internal/errors"
 	"github.com/python-leon/wallet-service/internal/model"
 	"github.com/python-leon/wallet-service/internal/repository"
@@ -9,6 +11,7 @@ import (
 type WalletService interface {
 	CreateWallet() *model.Wallet
 	GetWallet(id string) (*model.Wallet, error)
+	Transfer(req *model.TransferRequest) (*model.TransferResponse, error)
 }
 
 // walletService implements WalletService
@@ -35,4 +38,56 @@ func (s *walletService) GetWallet(id string) (*model.Wallet, error) {
 		return nil, errors.ErrWalletNotFound
 	}
 	return wallet, nil
+}
+
+// Transfer transfers funds from one wallet to another
+func (s *walletService) Transfer(req *model.TransferRequest) (*model.TransferResponse, error) {
+	// Validate request
+	if req.FromWalletID == "" {
+		return &model.TransferResponse{
+			Success: false,
+			Message: "source wallet ID is required",
+		}, nil
+	}
+
+	if req.ToWalletID == "" {
+		return &model.TransferResponse{
+			Success: false,
+			Message: "destination wallet ID is required",
+		}, nil
+	}
+
+	if req.FromWalletID == req.ToWalletID {
+		return &model.TransferResponse{
+			Success: false,
+			Message: "cannot transfer to the same wallet",
+		}, nil
+	}
+
+	if req.Amount <= 0 {
+		return &model.TransferResponse{
+			Success: false,
+			Message: "amount must be positive",
+		}, nil
+	}
+
+	result, err := s.repo.Transfer(req.FromWalletID, req.ToWalletID, req.Amount)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.TransferResponse{
+		Success: result.Success,
+		Message: result.Message,
+	}
+
+	if result.Success {
+		response.FromWalletID = result.FromWallet.ID
+		response.ToWalletID = result.ToWallet.ID
+		response.FromBalance = result.FromWallet.Balance
+		response.ToBalance = result.ToWallet.Balance
+		response.TransferredAt = time.Now().Format(time.RFC3339)
+	}
+
+	return response, nil
 }

@@ -9,12 +9,18 @@ import (
 
 // MockWalletRepository 是一个模拟的仓库层实现，用于测试
 type MockWalletRepository struct {
-	CreateFunc func() *model.Wallet
+	CreateFunc        func() *model.Wallet
+	GetByIDFunc       func(id string) (*model.Wallet, bool)
+	TransferFunc      func(fromID, toID string, amount int64) (*repository.TransferResult, error)
+	UpdateBalanceFunc func(id string, newBalance int64) bool
 }
 
 func (m *MockWalletRepository) GetByID(id string) (*model.Wallet, bool) {
-	//TODO implement me
-	panic("implement me")
+	if m.GetByIDFunc != nil {
+		return m.GetByIDFunc(id)
+	}
+	// 默认返回钱包不存在
+	return nil, false
 }
 
 func (m *MockWalletRepository) Create() *model.Wallet {
@@ -26,6 +32,25 @@ func (m *MockWalletRepository) Create() *model.Wallet {
 		ID:      "mock-wallet-id",
 		Balance: 0,
 	}
+}
+
+func (m *MockWalletRepository) Transfer(fromID, toID string, amount int64) (*repository.TransferResult, error) {
+	if m.TransferFunc != nil {
+		return m.TransferFunc(fromID, toID, amount)
+	}
+	// 默认返回转账成功
+	return &repository.TransferResult{
+		Success: true,
+		Message: "transfer successful",
+	}, nil
+}
+
+func (m *MockWalletRepository) UpdateBalance(id string, newBalance int64) bool {
+	if m.UpdateBalanceFunc != nil {
+		return m.UpdateBalanceFunc(id, newBalance)
+	}
+	// 默认返回成功
+	return true
 }
 
 // 测试 CreateWallet 方法

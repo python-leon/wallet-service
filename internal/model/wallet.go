@@ -11,3 +11,21 @@ type Wallet struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+// TransferRequest 不属于model 一般放在序列化服务里
+type TransferRequest struct {
+	FromWalletID string `json:"from_wallet_id"`
+	ToWalletID   string `json:"to_wallet_id"`
+	Amount       int64  `json:"amount"`
+}
+
+// TransferResponse represents the result of a transfer
+type TransferResponse struct {
+	Success       bool   `json:"success"`
+	Message       string `json:"message"`
+	FromWalletID  string `json:"from_wallet_id,omitempty"`
+	ToWalletID    string `json:"to_wallet_id,omitempty"`
+	FromBalance   int64  `json:"from_balance,omitempty"`
+	ToBalance     int64  `json:"to_balance,omitempty"`
+	TransferredAt string `json:"transferred_at,omitempty"`
+}

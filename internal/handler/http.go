@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/python-leon/wallet-service/internal/model"
 	"github.com/python-leon/wallet-service/internal/service"
 	"github.com/python-leon/wallet-service/pkg/response"
 )
@@ -51,4 +53,31 @@ func (h *WalletHandler) GetWallet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.Success(w, http.StatusOK, wallet)
+}
+
+// Transfer handles POST /wallets/transfer
+func (h *WalletHandler) Transfer(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		response.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	var req model.TransferRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	result, err := h.service.Transfer(&req)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	statusCode := http.StatusOK
+	if !result.Success {
+		statusCode = http.StatusBadRequest
+	}
+
+	response.JSON(w, statusCode, result)
 }
