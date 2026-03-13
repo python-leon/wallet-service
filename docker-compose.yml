@@ -12,7 +12,16 @@ services:
     environment:
       - HTTP_PORT=8080
       - GRPC_PORT=50051
-      - DEBUG=false
+      - STORAGE_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=wallet
+      - DB_SSLMODE=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
@@ -20,6 +29,52 @@ services:
       retries: 3
       start_period: 5s
     restart: unless-stopped
+    profiles:
+      - full
+      - postgres
+
+  wallet-service-memory:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wallet-service-memory
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    environment:
+      - HTTP_PORT=8080
+      - GRPC_PORT=50051
+      - STORAGE_TYPE=memory
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    profiles:
+      - memory
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: wallet-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=wallet
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d wallet"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    profiles:
+      - full
+      - postgres
 
   # Optional: grpcurl container for testing
   grpcurl:
@@ -27,6 +82,9 @@ services:
     container_name: grpcurl-client
     depends_on:
       - wallet-service
-    entrypoint: ["tail", "-f", "/dev/null"]  # Keep container running
+    entrypoint: ["tail", "-f", "/dev/null"]
     profiles:
       - testing
+
+volumes:
+  postgres_data:

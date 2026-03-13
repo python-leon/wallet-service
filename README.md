@@ -7,13 +7,18 @@
 - 创建新钱包
 - 查询钱包信息
 - 钱包间转账
+- 钱包存款
 - 内存存储（适用于开发和测试）
+- PostgreSQL 持久化存储（适用于生产环境）
 
 ## 技术栈
 
 - Go 1.22+
 - 标准库 HTTP 服务器
 - Go modules 依赖管理
+- PostgreSQL（可选，数据持久化）
+- GORM（ORM 库）
+- gRPC（可选）
 
 ## 项目结构
 
@@ -24,6 +29,7 @@ wallet-service/
 ├── cmd/
 │   └── server/         # 主程序入口
 ├── internal/
+│   ├── config/         # 配置管理
 │   ├── errors/         # 自定义错误类型
 │   ├── handler/        # HTTP 处理器
 │   ├── model/          # 数据模型
@@ -144,7 +150,49 @@ docker rm wallet-service
 |--------|--------|------|
 | HTTP_PORT | 8080 | REST API 端口 |
 | GRPC_PORT | 50051 | gRPC 服务端口 |
-| DEBUG | false | 调试模式 |
+| STORAGE_TYPE | memory | 存储类型：memory / postgres |
+| DB_HOST | localhost | 数据库主机 |
+| DB_PORT | 5432 | 数据库端口 |
+| DB_USER | postgres | 数据库用户 |
+| DB_PASSWORD | postgres | 数据库密码 |
+| DB_NAME | wallet | 数据库名称 |
+| DB_SSLMODE | disable | SSL 模式 |
+
+### 存储模式
+
+#### 内存存储（默认）
+
+数据存储在内存中，服务重启后数据丢失。适合开发和测试。
+
+```bash
+# 使用内存存储
+STORAGE_TYPE=memory go run cmd/server/main.go
+
+# 或使用 Docker Compose
+docker-compose --profile memory up -d
+```
+
+#### PostgreSQL 存储
+
+数据持久化到 PostgreSQL 数据库，适合生产环境。
+
+```bash
+# 使用 Docker Compose 启动完整服务（包含 PostgreSQL）
+docker-compose --profile full up -d
+
+# 或单独启动 PostgreSQL
+docker-compose --profile postgres up -d postgres
+```
+
+本地运行连接 Docker 中的 PostgreSQL：
+
+```bash
+# 启动 PostgreSQL
+docker-compose --profile postgres up -d postgres
+
+# 等待数据库就绪后启动服务
+STORAGE_TYPE=postgres DB_HOST=localhost go run cmd/server/main.go
+```
 
 ### 镜像特性
 
@@ -236,7 +284,7 @@ GET /wallets/{wallet_id}
 **示例请求：**
 
 ```bash
-curl http://localhost:8080/wallets/{1351dc5c-38c7-4c9d-addc-f69687eeb032}
+curl http://localhost:8080/wallets/{54bc2f3d-e436-4b83-8dbd-a48461ada276}
 ```
 
 **示例响应：**
@@ -276,7 +324,7 @@ POST /wallets/deposit
 curl -X POST http://localhost:8080/wallets/deposit \
   -H "Content-Type: application/json" \
   -d '{
-    "wallet_id": "wallet-id-here",
+    "wallet_id": "4394eb40-0821-410b-8f2c-fa7dde850350",
     "amount": 1000
   }'
 ```
