@@ -12,6 +12,11 @@ type MockWalletRepository struct {
 	CreateFunc func() *model.Wallet
 }
 
+func (m *MockWalletRepository) GetByID(id string) (*model.Wallet, bool) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (m *MockWalletRepository) Create() *model.Wallet {
 	if m.CreateFunc != nil {
 		return m.CreateFunc()

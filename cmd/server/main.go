@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"os"
 
@@ -24,5 +25,17 @@ func main() {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /wallets", walletHandler.CreateWallet)
+
+	// Health check endpoint
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
+	// Start HTTP server
+	log.Printf("Starting REST server on port %s...", httpPort)
+	if err := http.ListenAndServe(":"+httpPort, mux); err != nil {
+		log.Fatalf("Failed to start HTTP server: %v", err)
+	}
 
 }
