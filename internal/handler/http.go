@@ -81,3 +81,41 @@ func (h *WalletHandler) Transfer(w http.ResponseWriter, r *http.Request) {
 
 	response.JSON(w, statusCode, result)
 }
+
+// DepositRequest represents a deposit request
+type DepositRequest struct {
+	WalletID string `json:"wallet_id"`
+	Amount   int64  `json:"amount"`
+}
+
+// Deposit handles POST /deposit
+func (h *WalletHandler) Deposit(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		response.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	var req DepositRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.WalletID == "" {
+		response.Error(w, http.StatusBadRequest, "wallet_id is required")
+		return
+	}
+
+	if req.Amount <= 0 {
+		response.Error(w, http.StatusBadRequest, "amount must be positive")
+		return
+	}
+
+	wallet, err := h.service.Deposit(req.WalletID, req.Amount)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	response.Success(w, http.StatusOK, wallet)
+}

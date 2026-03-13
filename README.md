@@ -253,6 +253,48 @@ curl http://localhost:8080/wallets/{1351dc5c-38c7-4c9d-addc-f69687eeb032}
 }
 ```
 
+#### 存款
+
+```
+POST /wallets/deposit
+```
+
+为钱包充值。
+
+**请求体：**
+
+```json
+{
+  "wallet_id": "wallet-id",
+  "amount": 1000
+}
+```
+
+**示例请求：**
+
+```bash
+curl -X POST http://localhost:8080/wallets/deposit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "wallet_id": "wallet-id-here",
+    "amount": 1000
+  }'
+```
+
+**示例响应：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "wallet-id-here",
+    "balance": 1000,
+    "created_at": "2026-03-13T10:00:00Z",
+    "updated_at": "2026-03-13T10:00:00Z"
+  }
+}
+```
+
 #### 转账
 
 ```
@@ -392,6 +434,28 @@ grpcurl -plaintext -d '{
   "amount": 100
 }' localhost:50051 wallet.WalletService/Transfer
 ```
+
+### 负载测试
+
+项目提供了负载测试工具，用于测试服务的并发性能和转账正确性。
+
+#### 运行负载测试
+
+```bash
+# 启动服务
+go run cmd/server/main.go
+
+# 创建钱包测试
+go run scripts/loadtest.go -c 20 -n 1000
+
+# 混合测试
+go run scripts/loadtest.go -test mixed -c 10 -d 30s
+
+# 并发转账正确性测试
+go run scripts/loadtest.go -test transfer -c 10 -n 100
+```
+
+详细的并发转账正确性测试说明请参阅 [docs/concurrency-test.md](docs/concurrency-test.md)。
 
 ## 开发指南
 

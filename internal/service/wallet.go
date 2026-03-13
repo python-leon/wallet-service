@@ -11,6 +11,7 @@ import (
 type WalletService interface {
 	CreateWallet() *model.Wallet
 	GetWallet(id string) (*model.Wallet, error)
+	Deposit(id string, amount int64) (*model.Wallet, error)
 	Transfer(req *model.TransferRequest) (*model.TransferResponse, error)
 }
 
@@ -37,6 +38,25 @@ func (s *walletService) GetWallet(id string) (*model.Wallet, error) {
 	if !exists {
 		return nil, errors.ErrWalletNotFound
 	}
+	return wallet, nil
+}
+
+// Deposit adds funds to a wallet
+func (s *walletService) Deposit(id string, amount int64) (*model.Wallet, error) {
+	if amount <= 0 {
+		return nil, errors.ErrInvalidAmount
+	}
+
+	wallet, exists := s.repo.GetByID(id)
+	if !exists {
+		return nil, errors.ErrWalletNotFound
+	}
+
+	newBalance := wallet.Balance + amount
+	if !s.repo.UpdateBalance(id, newBalance) {
+		return nil, errors.ErrInsufficientBalance
+	}
+
 	return wallet, nil
 }
 

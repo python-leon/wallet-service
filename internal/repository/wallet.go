@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ type WalletRepository interface {
 	Create() *model.Wallet
 	GetByID(id string) (*model.Wallet, bool)
 	UpdateBalance(id string, newBalance int64) bool
+	Deposit(id string, amount int64) (*model.Wallet, error)
 	Transfer(fromID, toID string, amount int64) (*TransferResult, error)
 }
 
@@ -79,6 +81,28 @@ func (r *InMemoryWalletRepository) UpdateBalance(id string, newBalance int64) bo
 	wallet.Balance = newBalance
 	wallet.UpdatedAt = time.Now()
 	return true
+}
+
+// Deposit adds funds to a wallet atomically
+func (r *InMemoryWalletRepository) Deposit(id string, amount int64) (*model.Wallet, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	wallet, exists := r.wallets[id]
+	if !exists {
+		return nil, fmt.Errorf("wallet not found")
+	}
+
+	if amount <= 0 {
+		return nil, fmt.Errorf("amount must be positive")
+	}
+
+	wallet.Balance += amount
+	wallet.UpdatedAt = time.Now()
+
+	// Return a copy
+	walletCopy := *wallet
+	return &walletCopy, nil
 }
 
 // Transfer transfers amount from one wallet to another atomically

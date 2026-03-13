@@ -54,8 +54,9 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /wallets", walletHandler.CreateWallet)
-	mux.HandleFunc("GET /wallets/{wallet_id}", walletHandler.GetWallet)
 	mux.HandleFunc("POST /wallets/transfer", walletHandler.Transfer)
+	mux.HandleFunc("POST /wallets/deposit", walletHandler.Deposit)
+	mux.HandleFunc("GET /wallets/{wallet_id}", walletHandler.GetWallet)
 
 	// Health check endpoint
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
